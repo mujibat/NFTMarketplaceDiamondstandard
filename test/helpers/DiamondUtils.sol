@@ -1,6 +1,8 @@
 import "forge-std/Test.sol";
 import "solidity-stringutils/strings.sol";
 
+pragma solidity 0.8.19;
+
 abstract contract DiamondUtils is Test {
     using strings for *;
 
