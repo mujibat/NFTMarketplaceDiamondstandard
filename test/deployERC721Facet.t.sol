@@ -6,9 +6,7 @@ import "../contracts/facets/DiamondCutFacet.sol";
 import "../contracts/facets/DiamondLoupeFacet.sol";
 import "../contracts/facets/OwnershipFacet.sol";
 import "../contracts/Diamond.sol";
-// import "../contracts/facets/NFT.sol";
 import "../contracts/facets/ERC721Facet.sol";
-// import ".././lib/openzeppelin-contracts/contracts/token/ERC721/ERC721.sol";
 import "./helpers/DiamondUtils.sol";
 
 contract DiamondERC is DiamondUtils, IDiamondCut {
@@ -81,6 +79,7 @@ contract DiamondERC is DiamondUtils, IDiamondCut {
        vm.startPrank(address(0x1111));
         ERC721Facet(address(diamond)).mint(address(0x1111), 1);
         ERC721Facet(address(diamond)).burn (1); 
+        assertEq(ERC721Facet(address(diamond)).balanceOf(address(0x1111)), 0);
     }
     function testTransferFrom() public {
          vm.startPrank(address(0x1111));
@@ -105,6 +104,20 @@ contract DiamondERC is DiamondUtils, IDiamondCut {
         vm.startPrank(address(0x1111));
      ERC721Facet(address(diamond)).mint(address(0x1111), 1);  
      ERC721Facet(address(diamond)).ownerOf(1);
+    }
+
+    function testSetApprovalForAll() public {
+       vm.startPrank(address(0x1111));
+     ERC721Facet(address(diamond)).mint(address(0x1111), 1); 
+     ERC721Facet(address(diamond)).approve(address(0x2222), 1);
+    ERC721Facet(address(diamond)).setApprovalForAll(address(0x2222), true);
+    assertEq(ERC721Facet(address(diamond)).checkIsApprovedForAll(address(0x1111), address(0x2222)), true);
+    }
+
+    function testSafeMint() public {
+         vm.startPrank(address(0xA003A9A2E305Ff215F29fC0b7b4E2bb5a8C2F3e1));
+        ERC721Facet(address(diamond)).safeMint(address(0xA003A9A2E305Ff215F29fC0b7b4E2bb5a8C2F3e1), 1);
+        assertEq(ERC721Facet(address(diamond)).balanceOf(address(0xA003A9A2E305Ff215F29fC0b7b4E2bb5a8C2F3e1)), 1); 
     }
 
     function diamondCut(

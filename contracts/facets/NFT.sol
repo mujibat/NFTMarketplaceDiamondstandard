@@ -1,17 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.19;
-import "../../lib/solmate/src/tokens/ERC721.sol";
-// import "../../lib/solmate/src/tokens/ERC721/IERC721.sol";
-// /home/dolapo/ERC721Diamond/erc20-diamond-std/lib/openzeppelin-contracts/contracts/token/ERC721/ERC721.sol
-// import "../../lib/openzeppelin-contracts/contracts/token/ERC721/ERC721.sol";
-// import { ECDSA } from "../../lib/openzeppelin-contracts/contracts/utils/cryptography/ECDSA.sol";
+import "./ERC721Facet.sol";
 import {SignUtils} from "../libraries/SignUtils.sol";
 import { LibDiamond } from "../libraries/LibDiamond.sol";
 import { Order } from "../structs/struct.sol";
 contract ERC721Marketplace  {
-    // using ECDSA for bytes32;
-
- 
  
 
     error NotOwner();
@@ -26,8 +19,9 @@ contract ERC721Marketplace  {
 
     function createOrder(Order calldata order) external returns (uint256 orderId){
         LibDiamond.DiamondStorage storage ds = LibDiamond.diamondStorage();
-        if(ERC721(order.token).ownerOf(order.tokenId) != msg.sender) revert NotOwner();
-        if(!ERC721(order.token).isApprovedForAll(msg.sender, address(this))) revert NotApproved();        
+        if(ERC721Facet(order.token).ownerOf(order.tokenId) != msg.sender) revert NotOwner();
+        console2.logBool(ERC721Facet(order.token).checkIsApprovedForAll(msg.sender, address(this)));
+        if(!ERC721Facet(order.token).checkIsApprovedForAll(msg.sender, address(this))) revert NotApproved();        
         if(block.timestamp > order.deadline) revert DeadlinePassed();
         if (order.price < 0.01 ether) revert InvalidPrice();
 
@@ -67,7 +61,7 @@ contract ERC721Marketplace  {
             )
         ) revert InvalidSignature();
     
-        ERC721(order.token).transferFrom(order.seller, msg.sender, order.tokenId);
+        ERC721Facet(order.token).transferFrom(order.seller, msg.sender, order.tokenId);
         payable(order.seller).transfer(order.price);
 
         order.isActive = false;

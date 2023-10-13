@@ -81,10 +81,14 @@ contract ERC721Facet {
         emit Approval(owner, spender, id);
     }
 
+    function checkIsApprovedForAll(address origin, address operator) public view returns (bool){
+        LibDiamond.DiamondStorage storage ds = LibDiamond.diamondStorage();
+        return ds.isApprovedForAll[origin][operator];
+    }
+
     function setApprovalForAll(address operator, bool approved) public virtual {
         LibDiamond.DiamondStorage storage ds = LibDiamond.diamondStorage();
         ds.isApprovedForAll[msg.sender][operator] = approved;
-
         emit ApprovalForAll(msg.sender, operator, approved);
     }
 
@@ -207,6 +211,9 @@ contract ERC721Facet {
                         INTERNAL SAFE MINT LOGIC
     //////////////////////////////////////////////////////////////*/
 
+    function safeMint(address to, uint256 id) public {
+        _safeMint(to, id);
+    }
     function _safeMint(address to, uint256 id) internal virtual {
         _mint(to, id);
 

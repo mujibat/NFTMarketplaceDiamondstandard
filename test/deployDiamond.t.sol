@@ -35,7 +35,6 @@ contract DiamondDeployer is DiamondUtils, IDiamondCut {
         string memory name
     ) public returns (address addr, uint256 privateKey) {
         privateKey = uint256(keccak256(abi.encodePacked(name)));
-        // address addr = address(uint160(uint256(keccak256(abi.encodePacked(name)))))
         addr = vm.addr(privateKey);
         vm.label(addr, name);
     }
@@ -93,7 +92,7 @@ contract DiamondDeployer is DiamondUtils, IDiamondCut {
         erc721facet.mint(_userA, 1);
 
         //build cut struct
-        FacetCut[] memory cut = new FacetCut[](3);
+        FacetCut[] memory cut = new FacetCut[](4);
 
         cut[0] = (
             FacetCut({
@@ -119,6 +118,15 @@ contract DiamondDeployer is DiamondUtils, IDiamondCut {
             })
         );
 
+
+        cut[3] = (
+            FacetCut({
+                facetAddress: address(erc721facet),
+                action: FacetCutAction.Add,
+                functionSelectors: generateSelectors("ERC721Facet")
+            })
+        );
+
         //upgrade diamond
         IDiamondCut(address(diamond)).diamondCut(cut, address(0x0), "");
 
@@ -126,18 +134,13 @@ contract DiamondDeployer is DiamondUtils, IDiamondCut {
         DiamondLoupeFacet(address(diamond)).facetAddresses();
     }
 
-    // function testName() public {
-    //     assertEq(ERC721Facet(address(diamond)).name(), 'DOLAPO');
-    // }
-
- function testNotOwner() public {
+    function testNotOwner() public {
         _order.seller = _userB;
         vm.expectRevert(ERC721Marketplace.NotOwner.selector);
         _erc721marketplace.createOrder(_order);
     }
 
     function testNotApproved() public {
-        // switchSigner(_userA);
         vm.startPrank(_userA);
         vm.expectRevert(ERC721Marketplace.NotApproved.selector);
         _erc721marketplace.createOrder(_order);
@@ -160,11 +163,12 @@ contract DiamondDeployer is DiamondUtils, IDiamondCut {
     }
 
     function testCreateOrder() public {
+        LibDiamond.DiamondStorage storage ds = LibDiamond.diamondStorage();
         vm.startPrank(_userA);
         erc721facet.setApprovalForAll(address(_erc721marketplace), true);
         _order.deadline = 200;
 
-        uint currentCount = ds.listingId();
+        uint currentCount = ds.listingId;
         uint id = _erc721marketplace.createOrder(_order);
 
         assertEq(currentCount, id);
@@ -174,9 +178,7 @@ contract DiamondDeployer is DiamondUtils, IDiamondCut {
         uint orderId = _preExecute();
         _erc721marketplace.executeOrder{value: 5 ether}(orderId);
         vm.expectRevert();
-         _erc721marketplace.executeOrder{value: 5 ether}(orderId);
-
-        
+         _erc721marketplace.executeOrder{value: 5 ether}(orderId);  
     }
 
     function testIncorrectPrice() public {
@@ -194,8 +196,6 @@ contract DiamondDeployer is DiamondUtils, IDiamondCut {
     function testExecute() public {
         uint orderId = _preExecute();
         _erc721marketplace.executeOrder{value: 5 ether}(orderId);
-
-        // vm.expectRevert(ERC721Marketplace.InvalidSignature.selector);
     }
 
     function _preExecute() internal returns (uint _orderId) {
